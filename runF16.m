@@ -28,7 +28,7 @@ d2r = pi/180;
 % ==================
 IC.inertial_position = [0,0,-10000]; % At 10 Km altitude.
 IC.body_velocity = [300*ft2m,0,0];    % We may need to get this from Mach, alpha, beta
-IC.euler_angles = [5,1,4]*d2r;  % Euler angles
+IC.euler_angles = [0,0,0]*d2r;  % Euler angles
 IC.omega = [0,0,0] ;            % Angular velocity in body coordinate system
 
 Tend = 2.0; % Simulation time in seconds.
