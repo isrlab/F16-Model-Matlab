@@ -47,24 +47,37 @@
 % drud: max |rate|: 120 deg/s
 % dlef: max |rate|: 25 deg/s
 % =========================================================================
-clc; clear;
+clc; 
 
 Param = load_F16_params(); % System Parameters
 
 ft2m = 0.3048;
 d2r = pi/180;
 
-% Simulate with Arbitrary Initial Conditions
-% ==========================================
-IC.inertial_position = [0,0,-10000]; % At 10 Km altitude.
-IC.body_velocity = [300*ft2m,0,0];    % We may need to get this from Mach, alpha, beta
-IC.euler_angles = [0,0,0]*d2r;  % Euler angles
-IC.omega = [0,0,0] ;            % Angular velocity in body coordinate system
+% Trim the aircraft using Simulink's Control Design Toolbox.
+% ==========================================================
+% Need to mark inputs and outputs in the simulink digrams.
+% Open Steady State Manager to trim the aircraft. Here we are interested in
+% steady-level flight. Initialze the model with the trim state and control.
 
-Tend = 2.0; % Simulation time in seconds.
 tic
 simOut = sim('F16.slx');
 toc
 
 plot_trajectories(simOut);
+
+%% Linearization
+% Now linearize, assuming the linear model is linsys1
+
+% Extract the transfer function from elev to .
+sys = minreal(linsys1(11,3),1E-6); % system from ele to gam
+
+
+
+
+
+
+
+
+
 

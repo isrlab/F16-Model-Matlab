@@ -141,4 +141,8 @@ N = Cn_tot*qbar*Param.S*Param.b;
 
 FM = [Fx,Fy,Fz,L,M,N];
 
+if isnan(norm(FM))
+    keyboard
+end
+
 end
