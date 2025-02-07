@@ -34,7 +34,7 @@
 % r: Yaw rate in rad/s
 % The 5 control variables are:
 % 
-% T: Thrust in lbs, min: 1000, max: 19000
+% T: Thrust in lbf, min: 1000, max: 19000
 % dele: Elevator angle in deg, min:-25, max: 25
 % dail: Aileron angle in deg, min:-21.5, max: 21.5
 % drud: Rudder angle in deg, min: -30, max: 30
@@ -47,37 +47,70 @@
 % drud: max |rate|: 120 deg/s
 % dlef: max |rate|: 25 deg/s
 % =========================================================================
-clc; 
+clc; clear;
+
+conversion % loads conversion constants. see conversion.m for defintions.
 
 Param = load_F16_params(); % System Parameters
 
-ft2m = 0.3048;
-d2r = pi/180;
+% Simulate with Arbitrary Initial Conditions
+% ==========================================
+h0 = -10000; % 10 K altitude
+Vt0 = 500*ft2m;
 
-% Trim the aircraft using Simulink's Control Design Toolbox.
-% ==========================================================
-% Need to mark inputs and outputs in the simulink digrams.
-% Open Steady State Manager to trim the aircraft. Here we are interested in
-% steady-level flight. Initialze the model with the trim state and control.
-
-tic
-simOut = sim('F16.slx');
-toc
-
-plot_trajectories(simOut);
-
-%% Linearization
-% Now linearize, assuming the linear model is linsys1
-
-% Extract the transfer function from elev to .
-sys = minreal(linsys1(11,3),1E-6); % system from ele to gam
+% Need to specify IC to initialize simulink.
+IC.inertial_position = [0,0,h0]; % At 10 Km altitude.
+IC.body_velocity = [Vt0,0,0];    % We may need to get this from Mach, alpha, beta
+IC.euler_angles = [0,0,0]*d2r;  % Euler angles
+IC.omega = [0,0,0] ;            % Angular velocity in body coordinate system
+Tend = 2.0; % Simulation time in seconds.
 
 
+maxIter = 3000; % Iteration limit for optimization algorithm.
+[xTrim,uTrim,xdTrim,yTrim,fval,exitflag,output] = SteadyLevelTrim(h0, Vt0, maxIter);
+
+ix = [3,5,7,9,11];
+iy = [7,8,13];
+iu = [1,2];
+
+% Check
+disp(' ');
+disp(['Longitudinal xdTrim: ', num2str(xdTrim(ix)')]); disp(' ');
+disp(['Longitudinal xTrim: ', num2str(xTrim(ix))]); disp(' ');
+disp(['Longitudinal uTrim: ', num2str(uTrim(iu))]); disp(' ');
+disp(['Longitudinal yTrim: ', num2str(yTrim(iy)')]); disp(' ');
 
 
+%% Linearize
+[A,B,C,D] = linmod('F16',xTrim,uTrim);
 
+% Extract the longitudinal dynamics
+longi.ix = [5,7,9,11]; % th, U, w, q
+longi.iu = [1,2]; % T, dele
+longi.id = [5,7]; % dx, dz. Gust (vel) in body (x,z).
+longi.iy = [7,8,13,15,17,19]; % Vt, alp, q, xbdd, zbdd
 
+% Dynamics
+longi.A = A(longi.ix,longi.ix); % 
+longi.Bu = B(longi.ix,longi.iu);
+longi.Bd = B(longi.ix,longi.id);
 
+% Output
+longi.C = C(longi.iy,longi.ix);
+longi.Du = D(longi.iy,longi.iu);
+longi.Dd = D(longi.iy,longi.id);
 
+% Create the open-loop MIMO system
+AA = longi.A;
+BB = [longi.Bd longi.Bu];
+CC = longi.C;
+DD = [longi.Dd longi.Du];
+sys = ss(AA,BB,CC,DD); % Inputs: (dx, dy,T, dele) to (Vt, alp, q, xbdd, zbdd)
+
+outID = 1;
+inpID = 3;
+sys_T_to_Vt = sys(outID,inpID) ;
+
+damp(sys_T_to_Vt) % Shows poles, damping, nat freq, time constant
 
 
