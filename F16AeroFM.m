@@ -7,33 +7,32 @@
 % ==========================
 
 function FM = F16AeroFM(inp)
-Vt    = inp(1);
-alpha = inp(2);
-beta  = inp(3); 
-om    = inp(4:6);
-qbar  = inp(7);
-ele   = inp(8);
-ail   = inp(9);
-rud   = inp(10);
-lef   = inp(11);
 
-persistent Param F16Aero persistent_flag
+persistent Param F16Aero r2d persistent_flag
 if isempty(persistent_flag)
     persistent_flag = 1;
     Param = load_F16_params(); % System Parameters, mass, inertia, etc.
     Data = load('F16AeroDataInterpolants.mat');
     F16Aero = Data.F16AeroData;
+    r2d = 180/pi;
 end
+
+Vt    = inp(1);
+alpha = inp(2)*r2d; % Convert to degrees for aero table look up.
+beta  = inp(3)*r2d; % Convert to degrees for aero table look up.
+om    = inp(4:6);
+qbar  = inp(7);
+ele   = inp(8)*r2d; % Convert to degrees for aero table look up.
+ail   = inp(9)*r2d; % Convert to degrees for aero table look up.
+rud   = inp(10)*r2d; % Convert to degrees for aero table look up.
+lef   = inp(11)*r2d; % Convert to degrees for aero table look up.
 
 p = om(1);
 q = om(2);
 r = om(3);
 
-sa = sin(alpha); ca = cos(alpha);
-sb = sin(beta);  cb = cos(beta); tb = tan(beta);
-
-dail  = ail/21.5;       % Aileron angle normalized against max deflection
-drud  = rud/30.0;       % Rudder normalized against max angle
+dail  = ail/21.5;        % Aileron angle normalized against max deflection
+drud  = rud/30.0;        % Rudder normalized against max angle
 dlef  = (1 - lef/25.0); % Leading edge flap normalized against max angle
 
 
