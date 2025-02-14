@@ -8,6 +8,6 @@ This is a revised implementation of the older implementation available at  [MATL
 
 ## Trim and Linearization
 * Please see trim_and_linearize.m
-* Trim and linearization can also be done using [Simulink's Control System Design and Analysis Apps](https://www.mathworks.com/products/simcontrol.html).
+* Trim and linearization is done using [Simulink's Control System Design and Analysis Apps](https://www.mathworks.com/products/simcontrol.html). The script file Trim16.m, exported by Simulink, is for steady-level flight. This is called by trim_and_linearize.m.
 
 
